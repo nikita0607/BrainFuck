@@ -36,7 +36,7 @@ fn intrepret(code: String, regs: &mut [u32;100], ) -> Answers {
             "]" => {if regs[current_reg] > 0 {id=loops[loops.len()-1].try_into().unwrap();} else {loops.remove(loops.len()-1);}},
             "(" => {
                 if !func.contains_key(&regs[current_reg]) {
-                    func.insert(regs[current_reg], id);
+                    func.insert(regs[current_reg], id.clone());
                     while code.get(id..id+1).unwrap() != ")" {id += 1;};
                 }
 
