@@ -51,8 +51,7 @@ impl Interp {
         let mut string_id: usize = 0;
 
         let mut in_comment = false;
-        println!("{:?}", code);
-        
+
         for (id, ch) in code.chars().enumerate() {
             if ch == '\n' || ch == ' ' {
                 string_id += 1;
@@ -124,7 +123,6 @@ impl Interp {
             
         };
 
-        println!("{:?}", _brackets);
         for (.., id) in _brackets.iter() {
             errors.push(Error::UnclosedBracket(string_id, *id))
         };
@@ -304,7 +302,6 @@ fn one_line_mode() -> rustyline::Result<()>{
         let code: String = editor.readline(">>> ")?.replace("\u{1b}[", " ");
         
         let errors = interp.check_code(&code);
-        println!("{:?}", errors);
 
         if errors.len() > 0 {
             for error in errors.iter() {
