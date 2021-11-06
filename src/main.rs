@@ -49,10 +49,23 @@ impl Interp {
         let mut _brackets: Vec<(u8, usize)> = vec![];
         let mut errors: Vec<Error> = vec![];
         let mut string_id: usize = 0;
+
+        let mut in_comment = false;
+        println!("{:?}", code);
         
         for (id, ch) in code.chars().enumerate() {
             if ch == '\n' || ch == ' ' {
                 string_id += 1;
+                continue;
+            }
+
+            if in_comment {
+                in_comment = false;
+                continue;
+            }
+
+            if ch == '`' {
+                in_comment = true;
                 continue;
             }
 
@@ -69,12 +82,11 @@ impl Interp {
                 continue;
             }
 
-            let mut _len = _brackets.len();
-            
-            if !([')', ']', '}'].contains(&ch)) {
+            if ch != ')' && ch != '}' && ch != ']' {
                 continue;
             }
 
+            let mut _len = _brackets.len();
             if _len == 0 {
                 errors.push(Error::UnopenedBracket(string_id, id));
                 continue;
@@ -112,6 +124,7 @@ impl Interp {
             
         };
 
+        println!("{:?}", _brackets);
         for (.., id) in _brackets.iter() {
             errors.push(Error::UnclosedBracket(string_id, *id))
         };
@@ -132,11 +145,20 @@ impl Interp {
         let mut input = String::new();
         // println!("RUN CODE: {}, {}", code, id);
 
+        let mut in_comment = false;
+
         while id < code.len() {
+            if in_comment {
+                in_comment = false;
+                id += 1;
+                continue;
+            }
+
             let sym = code.get(id..id+1).unwrap();
             // println!("Current sym: {}", sym);
 
             match sym {
+                "`" => in_comment = true,
                 "+" => {regs[current_reg] += 1},
                 "-" => {if regs[current_reg] > 0 {regs[current_reg] -= 1} else {regs[current_reg] = 255} },
                 ">" => {if current_reg < 99 {current_reg += 1;} else {current_reg=0;}},
@@ -155,7 +177,7 @@ impl Interp {
                 "[" => {loops.push(id)},
                 "]" => {
                     if regs[current_reg] > 0 {
-                        id=loops[loops.len()-1].try_into().unwrap();
+                        id = loops[loops.len()-1].try_into().unwrap();
                     }       
                     else 
                         {loops.remove(loops.len()-1);}
@@ -279,9 +301,10 @@ fn one_line_mode() -> rustyline::Result<()>{
     let mut interp = Interp::new();
 
     loop {   
-        let code: String = editor.readline(">>> ")?;
+        let code: String = editor.readline(">>> ")?.replace("\u{1b}[", " ");
         
         let errors = interp.check_code(&code);
+        println!("{:?}", errors);
 
         if errors.len() > 0 {
             for error in errors.iter() {
